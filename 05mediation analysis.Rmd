@@ -1,0 +1,105 @@
+---
+title: "mediation analysis"
+author: "w"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# lavaan package mediation analysis
+
+```{r}
+bodysize_set3$BirthWeight_3group<-ordered(bodysize_set3$BirthWeight_3group,levels=c("Low","Normal","High"))
+
+bodysize_set3$Comparative_body_size_at_age_10<-ordered(bodysize_set3$Comparative_body_size_at_age_10,levels=c("Thinner","About Average","Plumper"))
+
+bodysize_set3$BMI_3group<-ordered(bodysize_set3$BMI_3group)
+```
+
+
+##  1.birth -> 10y -> cvd
+
+```{r Med1}
+library(lavaan)
+
+Sys.time()
+model1<-'
+  icd_cvd ~ c * BirthWeight_3group + b*Comparative_body_size_at_age_10 +sex+race+cvd_FH+maternal_smoking+breastfeeding+maternal_hypertension+maternal_diabetes+parental_diabetes
+  Comparative_body_size_at_age_10 ~ a * BirthWeight_3group +sex+race+cvd_FH+maternal_smoking+breastfeeding+maternal_hypertension+maternal_diabetes+parental_diabetes
+ 
+  IdE := a*b
+  DE := c
+  total := a*b + c
+'
+fit1<-sem(model1,data = bodysize_set3,estimator="DWLS",se="boot",bootstrap=5000)
+summary(fit1, standardized=TRUE,fit.measures=TRUE,rsquare=TRUE)
+parameterEstimates(fit1,boot.ci.type = "perc",standardized = TRUE)
+Sys.time()
+
+```
+
+##  2.birth -> midlife -> cvd
+
+```{r}
+Sys.time()
+
+model2<-'
+  icd_cvd ~ c * BirthWeight_3group + b*BMI_3group +t1age+sex+race+cvd_FH+maternal_smoking+breastfeeding+maternal_hypertension+maternal_diabetes+parental_diabetes+TDI+education_levels+physical_activity+smoking_status+alcohol_status
+  BMI_3group ~ a * BirthWeight_3group +t1age+sex+race+cvd_FH+maternal_smoking+breastfeeding+maternal_hypertension+maternal_diabetes+parental_diabetes+TDI+education_levels+physical_activity+smoking_status+alcohol_status
+
+  IdE := a*b
+  DE := c
+  total := a*b + c
+'
+fit2<-sem(model2,data = bodysize_set3,se="boot",estimator="DWLS",bootstrap=5000)
+summary(fit2, standardized=TRUE,fit.measures=TRUE,rsquare=TRUE)
+parameterEstimates(fit2,boot.ci.type = "perc",standardized = TRUE)
+Sys.time()
+
+```
+
+##  3.10y -> midlife -> cvd
+
+```{r}
+Sys.time()
+model3<-'
+  icd_cvd ~ c * Comparative_body_size_at_age_10 + b*BMI_3group +t1age+sex+race+cvd_FH+maternal_smoking+breastfeeding+maternal_hypertension+maternal_diabetes+parental_diabetes+TDI+education_levels+physical_activity+smoking_status+alcohol_status
+  BMI_3group ~ a * Comparative_body_size_at_age_10 +t1age+sex+race+cvd_FH+maternal_smoking+breastfeeding+maternal_hypertension+maternal_diabetes+parental_diabetes+TDI+education_levels+physical_activity+smoking_status+alcohol_status
+
+  IdE := a*b
+  DE := c
+  total := a*b + c
+'
+fit3<-sem(model3,data = bodysize_set3,se="boot",estimator="DWLS",bootstrap=5000)
+summary(fit3, standardized=TRUE,fit.measures=TRUE,rsquare=TRUE)
+parameterEstimates(fit3,boot.ci.type = "perc",standardized = TRUE)
+Sys.time()
+
+```
+
+## 4.birth -> 10y -> midlife -> cvd
+
+```{r}
+Sys.time()
+
+model4<-'
+icd_cvd ~ b1*Comparative_body_size_at_age_10 + b2*BMI_3group + c1*BirthWeight_3group +t1age+sex+race+cvd_FH+maternal_smoking+breastfeeding+maternal_hypertension+maternal_diabetes+parental_diabetes+TDI+education_levels+physical_activity+smoking_status+alcohol_status
+
+Comparative_body_size_at_age_10 ~ a1*BirthWeight_3group +t1age+sex+race+cvd_FH+maternal_smoking+breastfeeding+maternal_hypertension+maternal_diabetes+parental_diabetes+TDI+education_levels+physical_activity+smoking_status+alcohol_status
+
+BMI_3group ~ a2*BirthWeight_3group + d21*Comparative_body_size_at_age_10 +t1age+sex+race+cvd_FH+maternal_smoking+breastfeeding+maternal_hypertension+maternal_diabetes+parental_diabetes+TDI+education_levels+physical_activity+smoking_status+alcohol_status
+
+IdE := a1*d21*b2
+DE := c1
+total := a1*d21*b2 + a2*b2 + a1*b1 + c1
+'
+
+fit4<-sem(model4,data = bodysize_set3,se="boot",estimator="DWLS",bootstrap=5000)
+summary(fit4, standardized=TRUE,fit.measures=TRUE,rsquare=TRUE)
+parameterEstimates(fit4,boot.ci.type = "perc",standardized = TRUE)
+Sys.time()
+
+```
